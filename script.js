@@ -3,26 +3,49 @@ document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('todo-input');
   const list = document.getElementById('todo-list');
 
-  // Load saved todos
+  let editMode = false;
+  let itemBeingEdited = null;
+
   const savedTodos = JSON.parse(localStorage.getItem('todos')) || [];
   savedTodos.forEach(todo => addTodoToDOM(todo.text, todo.done));
 
   form.addEventListener('submit', e => {
     e.preventDefault();
     const text = input.value.trim();
-    if (text !== '') {
+    if (text === '') return;
+
+    if (editMode && itemBeingEdited) {
+      const span = itemBeingEdited.querySelector('.todo-text');
+      span.textContent = text;
+      input.value = '';
+      editMode = false;
+      itemBeingEdited = null;
+    } else {
       addTodoToDOM(text);
       input.value = '';
-      saveTodos();
     }
+    saveTodos();
   });
 
   list.addEventListener('click', e => {
+    const li = e.target.closest('li');
+    if (!li) return;
+
     if (e.target.classList.contains('delete-btn')) {
-      e.target.parentElement.remove();
+      li.remove();
       saveTodos();
-    } else if (e.target.classList.contains('todo-text')) {
-      e.target.parentElement.classList.toggle('done');
+    }
+
+    if (e.target.classList.contains('edit-btn')) {
+      const span = li.querySelector('.todo-text');
+      input.value = span.textContent;
+      input.focus();
+      editMode = true;
+      itemBeingEdited = li;
+    }
+
+    if (e.target.classList.contains('todo-text')) {
+      li.classList.toggle('done');
       saveTodos();
     }
   });
@@ -35,11 +58,16 @@ document.addEventListener('DOMContentLoaded', () => {
     span.className = 'todo-text';
     span.textContent = text;
 
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-btn';
+    editBtn.textContent = 'ویرایش';
+
     const delBtn = document.createElement('button');
     delBtn.className = 'delete-btn';
     delBtn.textContent = 'حذف';
 
     li.appendChild(span);
+    li.appendChild(editBtn);
     li.appendChild(delBtn);
     list.appendChild(li);
   }
